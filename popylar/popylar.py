@@ -2,9 +2,11 @@ import os.path as op
 import requests
 import uuid
 import configparser
+import os
 
 popylar_path = op.join(op.expanduser('~'), '.popylar')
 
+default_ci_env = dict(TRAVIS=True)
 
 def get_or_create_config():
     if not op.exists(popylar_path):
@@ -54,6 +56,36 @@ def _get_uid():
         uid = False
     return uid
 
+def has_ci_env_vars(**additional_ci_dict):
+    """
+    Checks if environmental variables in `default_ci_env` and the keyword
+    argument additional_ci_dict are defined and they have the values indicated
+    in the dictionary. While any environment values can be passed in, this is
+    meant to pass in environment values that indicate a CI system is running
+    the program
+
+    Parameters
+    ---------
+    additional_ci_dict: dictionary
+        keys and values of environmental
+
+    Return
+    ------
+    Boolean: True if any of the defined environment variables are found to have
+        expected values, False otherwise.
+    """
+    ci = False
+
+    # Add keyword arguments to dictionary
+    for (key, value) in additional_ci_dict.items():
+        default_ci_env[key] = value
+    
+    for (key, value) in default_ci_env.items():
+        val = os.getenv(key)
+        if val is not None:
+            if val.strip().lower() == value.strip().lower():
+                ci = True
+    return ci
 
 def track_event(tracking_id, category, action, uid=None, label=None, value=0,
                 software_version=None, timeout=2):
